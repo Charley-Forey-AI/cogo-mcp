@@ -2,6 +2,19 @@
 
 Run the app **behind nginx**: bind the MCP server to **localhost only**, expose it on **`https://your-server/mcp/cogo`** (or HTTP) via nginx. Run the process under **systemd** so it restarts on failure and after reboot.
 
+## Deploy under `~/mcp` (home folder)
+
+If your server keeps MCP projects in **`~/mcp`** (e.g. `/home/ubuntu/mcp`), clone **into that directory** — do **not** use `/mcp/cogo` unless you created `/mcp` at the filesystem root.
+
+```bash
+cd ~/mcp
+git clone https://github.com/Charley-Forey-AI/cogo-mcp.git cogo
+```
+
+App root is then **`~/mcp/cogo`** (i.e. `/home/ubuntu/mcp/cogo`). Use that path for **venv**, **`.env`**, and **systemd** `WorkingDirectory` / `ExecStart`. Nginx still proxies to `127.0.0.1:8880`; only filesystem paths change.
+
+The steps below use **`/mcp/cogo`** as an example; substitute **`/home/ubuntu/mcp/cogo`** (or your user’s home) everywhere if you use `~/mcp`.
+
 ## 1. System user and directory
 
 ```bash
