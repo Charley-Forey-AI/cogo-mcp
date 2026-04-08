@@ -26,6 +26,22 @@ def _env_int(name: str, default: int) -> int:
     return int(v)
 
 
+def _resolve_finetuned_model(model: str | None) -> str:
+    """
+    Model id from the tool argument, else OPENAI_FINETUNED_MODEL in the environment.
+    Use the full id from OpenAI (often starts with ft:).
+    """
+    explicit = (model or "").strip()
+    if explicit:
+        return explicit
+    from_env = (os.environ.get("OPENAI_FINETUNED_MODEL") or "").strip()
+    if from_env:
+        return from_env
+    raise RuntimeError(
+        "No model set: pass `model` on the tool, or set OPENAI_FINETUNED_MODEL in `.env`."
+    )
+
+
 DEFAULT_SYSTEM_PROMPT = """Convert legal description calls into COGO compact encoding.
 
 Output ONLY the encoded line(s), exactly as specified. Preserve all numbers, bearings, punctuation, and ordering. No extra commentary.
@@ -51,7 +67,7 @@ mcp = FastMCP(
         "then resolve `{...}` Python/math expressions in the result (and optionally in context)."
     ),
     host=os.environ.get("FASTMCP_HOST", "127.0.0.1"),
-    port=_env_int("FASTMCP_PORT", 8000),
+    port=_env_int("FASTMCP_PORT", 8880),
     streamable_http_path=os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp"),
 )
 
@@ -87,8 +103,8 @@ def _responses_create(
 
 @mcp.tool()
 def request_finetuned_model(
-    model: str,
     user_message: str,
+    model: str | None = None,
     system_prompt: str | None = None,
     extra_context: str | None = None,
     max_output_tokens: int = 2048,
@@ -100,12 +116,13 @@ def request_finetuned_model(
     (e.g. prior lines, units, project notes). It is combined with `user_message` in one user message.
 
     Parameters:
-        model: Fine-tuned model id (e.g. ft:gpt-4.1-nano-...:project:...).
+        model: Fine-tuned model id (e.g. ft:gpt-4.1-nano-...:org:project:id). If omitted, uses OPENAI_FINETUNED_MODEL from the environment.
         user_message: Main instruction or text to encode.
         system_prompt: Optional override; defaults to the built-in COGO compact-encoding prompt.
         extra_context: Optional context prepended to the user message (after a separator).
         max_output_tokens: Cap for the model output.
     """
+    mid = _resolve_finetuned_model(model)
     sys_p = system_prompt if system_prompt is not None else DEFAULT_SYSTEM_PROMPT
     if extra_context and extra_context.strip():
         user_content = (
@@ -115,10 +132,11 @@ def request_finetuned_model(
         user_content = user_message.strip()
 
     raw = _responses_create(
-        model, sys_p, user_content, max_output_tokens=max_output_tokens
+        mid, sys_p, user_content, max_output_tokens=max_output_tokens
     )
     return {
         "output_text": raw,
+        "model_used": mid,
         "system_prompt_used": sys_p,
     }
 
@@ -138,8 +156,8 @@ def resolve_calculations_in_text_tool(text: str) -> dict[str, Any]:
 
 @mcp.tool()
 def complete_with_calculations(
-    model: str,
     user_message: str,
+    model: str | None = None,
     system_prompt: str | None = None,
     extra_context: str | None = None,
     preprocess_context: bool = True,
@@ -154,7 +172,10 @@ def complete_with_calculations(
     Set `preprocess_context` to evaluate math in context before the API call (when context
     contains feet expressions you want expanded before encoding). Set `postprocess_output`
     to evaluate math in the model reply (typical for COGO output with brace expressions).
+
+    If `model` is omitted, OPENAI_FINETUNED_MODEL from the environment is used.
     """
+    mid = _resolve_finetuned_model(model)
     sys_p = system_prompt if system_prompt is not None else DEFAULT_SYSTEM_PROMPT
     ctx = extra_context
     ctx_notes: dict[str, Any] = {}
@@ -175,11 +196,12 @@ def complete_with_calculations(
         user_content = user_message.strip()
 
     raw = _responses_create(
-        model, sys_p, user_content, max_output_tokens=max_output_tokens
+        mid, sys_p, user_content, max_output_tokens=max_output_tokens
     )
     display = strip_code_fence(raw) if strip_markdown_fence else raw
 
     out: dict[str, Any] = {
+        "model_used": mid,
         "raw_output_text": raw,
         "model_response_before_calcs": display,
         "preprocess": ctx_notes,

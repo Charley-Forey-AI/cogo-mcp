@@ -38,6 +38,14 @@ Point your MCP client at the **Streamable HTTP** URL above. Exact JSON shape dep
 
 **Secrets:** pass `OPENAI_API_KEY` via the process environment (or your orchestrator’s secret store), not committed files.
 
+### Default fine-tuned model
+
+Set **`OPENAI_FINETUNED_MODEL`** in `.env` to your full model id (from the OpenAI dashboard / fine-tune job). It usually starts with **`ft:`**, for example:
+
+`ft:gpt-4.1-nano-2025-04-14:trimble:project1:DDahEMRm`
+
+Then you can omit the `model` argument on `request_finetuned_model` and `complete_with_calculations`; responses include **`model_used`** so you can confirm which id ran. Override per call by passing `model` explicitly.
+
 ## Tools
 
 | Tool | Purpose |
@@ -64,6 +72,7 @@ Your **Samples for Testing** files are mostly already-encoded COGO lines (`LB �
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `OPENAI_API_KEY` | Yes | OpenAI API key for Responses API calls. |
+| `OPENAI_FINETUNED_MODEL` | Recommended | Default fine-tuned model id (`ft:…`) when tools omit `model`. |
 
 ## What you might add next
 
