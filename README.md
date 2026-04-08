@@ -6,18 +6,18 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) server that forward
 
 This server runs **MCP over Streamable HTTP** by default (not stdio).
 
-| Setting | Environment variable | Default |
+| Setting | Environment variable | Default (see `.env.example`) |
 |--------|----------------------|---------|
 | Bind address | `FASTMCP_HOST` | `127.0.0.1` |
-| Port | `FASTMCP_PORT` | `8000` |
-| MCP endpoint path | `FASTMCP_STREAMABLE_HTTP_PATH` | `/mcp` |
+| Port | `FASTMCP_PORT` | `8880` |
+| MCP endpoint path | `FASTMCP_STREAMABLE_HTTP_PATH` | `/mcp/cogo` |
 | Transport selection | `MCP_TRANSPORT` | `streamable-http` |
 
 **MCP URL** (what clients use to connect):
 
 `http://<FASTMCP_HOST>:<FASTMCP_PORT><FASTMCP_STREAMABLE_HTTP_PATH>`
 
-Example: `http://127.0.0.1:8000/mcp`
+Example: `http://127.0.0.1:8880/mcp/cogo`
 
 To listen on all interfaces (Docker, LAN, reverse proxy on the same host), set `FASTMCP_HOST=0.0.0.0`.
 
