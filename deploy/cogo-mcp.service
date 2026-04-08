@@ -1,0 +1,29 @@
+# Copy to /etc/systemd/system/cogo-mcp.service
+#   sudo cp deploy/cogo-mcp.service /etc/systemd/system/
+# Adjust User/Group and paths if needed, then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now cogo-mcp
+
+[Unit]
+Description=cogo-mcp (FastMCP Streamable HTTP for OpenAI + COGO calc)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mcp
+Group=mcp
+WorkingDirectory=/mcp/cogo
+EnvironmentFile=-/mcp/cogo/.env
+ExecStart=/mcp/cogo/.venv/bin/python /mcp/cogo/server.py
+Restart=on-failure
+RestartSec=5
+# Streamable HTTP can hold connections open
+TimeoutStopSec=30
+
+# Hardening (optional; remove if something breaks)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

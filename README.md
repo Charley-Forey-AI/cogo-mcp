@@ -85,6 +85,10 @@ These are **not** implemented here; add them if your deployment needs them:
 5. **Logging / metrics** — Structured logs and request IDs for production.
 6. **Resource limits** — `max_output_tokens` is per-call; add rate limiting or quotas if exposed broadly.
 
+## Ubuntu deployment (nginx + systemd)
+
+Use **`deploy/DEPLOY-UBUNTU.md`** for installing under `/mcp/cogo`, a **systemd** unit (`deploy/cogo-mcp.service`), and an **nginx** reverse-proxy example (`deploy/nginx-cogo-mcp.conf.example`). The app listens on `127.0.0.1`; nginx exposes `https://your-server/mcp/cogo` (or HTTP).
+
 ## Project layout
 
 | File | Role |
@@ -92,3 +96,4 @@ These are **not** implemented here; add them if your deployment needs them:
 | `server.py` | FastMCP app, tools, Streamable HTTP entrypoint |
 | `calc.py` | Safe `{...}` evaluation |
 | `requirements.txt` | Python dependencies |
+| `deploy/` | systemd unit, nginx snippet, Ubuntu steps |
