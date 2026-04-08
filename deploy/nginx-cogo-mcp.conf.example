@@ -2,6 +2,9 @@
 # Match `.env` on the server: FASTMCP_PORT=8880 and FASTMCP_STREAMABLE_HTTP_PATH=/mcp/cogo
 #
 # Public MCP base URL: https://your.domain/mcp/cogo
+#
+# If you see HTTP 421 behind nginx: set FASTMCP_TRUST_PROXY=1 in the app's `.env` (see .env.example).
+# The MCP stack validates the Host header; the proxy sends your public hostname, not 127.0.0.1.
 
 location /mcp/cogo {
     proxy_pass http://127.0.0.1:8880;

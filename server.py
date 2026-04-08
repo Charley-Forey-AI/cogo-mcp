@@ -14,6 +14,7 @@ import sys
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from openai import OpenAI
 
 from calc import resolve_calculations_in_text, strip_code_fence
@@ -60,6 +61,47 @@ Curves / chord-based distances (NO numeric solving): If a curve's distance is gi
 {arc_length = 2 * r * math.asin(chord_length / (2 * r))}"""
 
 
+def _transport_security() -> TransportSecuritySettings | None:
+    """
+    FastMCP enables DNS-rebinding checks for localhost; nginx forwards Host as the public
+    hostname/IP, which otherwise returns 421 Invalid Host. Set FASTMCP_TRUST_PROXY=1 behind nginx.
+    Or set FASTMCP_ALLOWED_HOSTS=host1,host2 (comma-separated IPs or hostnames).
+    """
+    trust = os.environ.get("FASTMCP_TRUST_PROXY", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    if trust:
+        return TransportSecuritySettings(enable_dns_rebinding_protection=False)
+
+    extra_raw = os.environ.get("FASTMCP_ALLOWED_HOSTS", "").strip()
+    if not extra_raw:
+        return None
+
+    extras = [h.strip() for h in extra_raw.split(",") if h.strip()]
+    if not extras:
+        return None
+
+    allowed_hosts = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
+    allowed_origins = [
+        "http://127.0.0.1:*",
+        "http://localhost:*",
+        "http://[::1]:*",
+    ]
+    for h in extras:
+        allowed_hosts.append(h)
+        allowed_hosts.append(f"{h}:*")
+        allowed_origins.append(f"http://{h}:*")
+        allowed_origins.append(f"https://{h}:*")
+
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=allowed_hosts,
+        allowed_origins=allowed_origins,
+    )
+
+
 mcp = FastMCP(
     "cogo-finetuned",
     instructions=(
@@ -68,7 +110,10 @@ mcp = FastMCP(
     ),
     host=os.environ.get("FASTMCP_HOST", "127.0.0.1"),
     port=_env_int("FASTMCP_PORT", 8880),
-    streamable_http_path=os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp"),
+    streamable_http_path=os.environ.get(
+        "FASTMCP_STREAMABLE_HTTP_PATH", "/mcp/cogo"
+    ),
+    transport_security=_transport_security(),
 )
 
 

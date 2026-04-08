@@ -100,3 +100,4 @@ sudo ufw allow 'Nginx Full'
 - **502 Bad Gateway** — Service not running: `systemctl status cogo-mcp`. Wrong port/path: compare `.env` and nginx `proxy_pass` / `location`.
 - **Connection refused** — Confirm `FASTMCP_HOST=127.0.0.1` and `FASTMCP_PORT` matches nginx.
 - **Wrong path** — `FASTMCP_STREAMABLE_HTTP_PATH` must be exactly `/mcp/cogo` if clients call `https://host/mcp/cogo`.
+- **421 Misdirected Request / Invalid Host** — nginx sends `Host: your-public-ip`; FastMCP’s DNS rebinding check only allows `127.0.0.1` by default. Set **`FASTMCP_TRUST_PROXY=1`** in `.env` (recommended behind nginx), or **`FASTMCP_ALLOWED_HOSTS=52.x.x.x,your.domain`**, then `sudo systemctl restart cogo-mcp`.
